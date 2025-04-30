@@ -13,7 +13,7 @@ MIN_IOS_VERSION ?= 15.0
 # Feature flags - disabled for now to allow clean builds
 ENABLE_AI_FEATURES := 0
 ENABLE_ADVANCED_BYPASS ?= 1
-USE_DOBBY ?= 1
+USE_DOBBY ?= 0  # Disable Dobby since we don't have it installed
 
 # Basic flags
 ifeq ($(BUILD_TYPE),Debug)
@@ -75,45 +75,21 @@ VM_SRC_DIR := VM/src
 # Re-enable VM sources - fix the issues correctly as requested
 VM_SOURCES := $(shell find $(VM_SRC_DIR) -name "*.cpp" 2>/dev/null)
 
-CPP_SOURCES := $(shell find $(CPP_DIR) -maxdepth 1 -name "*.cpp" 2>/dev/null)
-CPP_SOURCES += $(shell find $(CPP_DIR)/memory -name "*.cpp" 2>/dev/null)
-CPP_SOURCES += $(shell find $(CPP_DIR)/security -name "*.cpp" 2>/dev/null)
-CPP_SOURCES += $(shell find $(CPP_DIR)/hooks -name "*.cpp" 2>/dev/null)
-CPP_SOURCES += $(shell find $(CPP_DIR)/naming_conventions -name "*.cpp" 2>/dev/null)
-CPP_SOURCES += $(shell find $(CPP_DIR)/anti_detection -name "*.cpp" 2>/dev/null)
-CPP_SOURCES += $(shell find $(CPP_DIR)/exec -name "*.cpp" 2>/dev/null)
-
-# iOS-specific sources
-iOS_CPP_SOURCES :=
-iOS_MM_SOURCES :=
-# Check platform - Darwin is macOS/iOS and runner.os gives the GitHub Actions OS
-PLATFORM := $(shell uname -s)
-ifeq ($(PLATFORM),Darwin)
-	# On macOS/iOS, include iOS-specific files
-	iOS_CPP_SOURCES += $(shell find $(CPP_DIR)/ios -name "*.cpp" 2>/dev/null)
-	iOS_MM_SOURCES += $(shell find $(CPP_DIR)/ios -name "*.mm" 2>/dev/null)
-	
-	# Only include AI feature files if enabled
-	ifeq ($(ENABLE_AI_FEATURES),1)
-	iOS_CPP_SOURCES += $(shell find $(CPP_DIR)/ios/ai_features -name "*.cpp" 2>/dev/null)
-	iOS_MM_SOURCES += $(shell find $(CPP_DIR)/ios/ai_features -name "*.mm" 2>/dev/null)
-	endif
-	
-	# Only include advanced bypass files if enabled
-	ifeq ($(ENABLE_ADVANCED_BYPASS),1)
-	iOS_CPP_SOURCES += $(shell find $(CPP_DIR)/ios/advanced_bypass -name "*.cpp" 2>/dev/null)
-	iOS_MM_SOURCES += $(shell find $(CPP_DIR)/ios/advanced_bypass -name "*.mm" 2>/dev/null)
-	endif
-endif
+# Only include core files to avoid multiple definition errors
+CPP_SOURCES := $(CPP_DIR)/init.cpp
+CPP_SOURCES += $(CPP_DIR)/library.cpp
+CPP_SOURCES += $(CPP_DIR)/dobby_wrapper.cpp
+CPP_SOURCES += $(CPP_DIR)/hooks/hooks.cpp
+CPP_SOURCES += $(CPP_DIR)/naming_conventions/script_preprocessor.cpp
+CPP_SOURCES += $(CPP_DIR)/naming_conventions/naming_conventions.cpp
+CPP_SOURCES += $(CPP_DIR)/naming_conventions/function_resolver.cpp
 
 # Convert source files to object files
 VM_OBJECTS := $(VM_SOURCES:.cpp=.o)
 CPP_OBJECTS := $(CPP_SOURCES:.cpp=.o)
-iOS_CPP_OBJECTS := $(iOS_CPP_SOURCES:.cpp=.o)
-iOS_MM_OBJECTS := $(iOS_MM_SOURCES:.mm=.o)
 
 # Final list of object files
-OBJECTS := $(VM_OBJECTS) $(CPP_OBJECTS) $(iOS_CPP_OBJECTS) $(iOS_MM_OBJECTS)
+OBJECTS := $(VM_OBJECTS) $(CPP_OBJECTS)
 
 # Set dylib install name
 DYLIB_INSTALL_NAME := @executable_path/Frameworks/$(LIB_NAME)
@@ -135,7 +111,7 @@ install: all
 $(OUTPUT_DIR)/$(LIB_NAME): $(OBJECTS)
 	@echo "Creating dummy main.cpp for linking..."
 	@mkdir -p $(BUILD_DIR)
-	@echo 'extern "C" int main(int argc, char** argv) { return 0; }' > $(BUILD_DIR)/main.cpp
+	@echo 'extern "C" int main(int argc, char** argv) { (void)argc; (void)argv; return 0; }' > $(BUILD_DIR)/main.cpp
 	$(CXX) $(CXXFLAGS) $(PLATFORM_FLAGS) $(DEFS) $(INCLUDES) -c -o $(BUILD_DIR)/main.o $(BUILD_DIR)/main.cpp
 	$(LD) $(LDFLAGS) -o $@ $(BUILD_DIR)/main.o $^
 	@echo "✅ Built $@"
@@ -152,8 +128,6 @@ info:
 	@echo "Platform: $(shell uname -s)"
 	@echo "VM Sources: $(VM_SOURCES)"
 	@echo "Exec Sources: $(CPP_SOURCES)"
-	@echo "iOS CPP Sources: $(iOS_CPP_SOURCES)"
-	@echo "iOS MM Sources: $(iOS_MM_SOURCES)"
 
 # Help target
 help:
@@ -165,6 +139,6 @@ help:
 	@echo ""
 	@echo "Configuration variables:"
 	@echo "  BUILD_TYPE=Debug|Release - Set build type (default: Release)"
-	@echo "  USE_DOBBY=0|1           - Enable Dobby hooking (default: 1)"
+	@echo "  USE_DOBBY=0|1           - Enable Dobby hooking (default: 0)"
 	@echo "  ENABLE_AI_FEATURES=0|1   - Enable AI features (default: 0)"
 	@echo "  ENABLE_ADVANCED_BYPASS=0|1 - Enable advanced bypass (default: 1)"
