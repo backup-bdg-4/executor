@@ -14,14 +14,14 @@
 #include <string.h>
 #include <stdio.h>
 
-static void validateobjref(global_State* g, GCObject* f, GCObject* t)
+static void validateobjref(global_State* g, GCObject* /*f*/, GCObject* t)
 {
     LUAU_ASSERT(!isdead(g, t));
 
     if (keepinvariant(g))
     {
         // basic incremental invariant: black can't point to white
-        LUAU_ASSERT(!(isblack(f) && iswhite(t)));
+        LUAU_ASSERT(!(isblack(/*f*/) && iswhite(t)));
     }
 }
 
@@ -213,7 +213,7 @@ static void validategraylist(global_State* g, GCObject* o)
     }
 }
 
-static bool validategco(void* context, lua_Page* page, GCObject* gco)
+static bool validategco(void* context, lua_Page* /*page*/, GCObject* gco)
 {
     lua_State* L = (lua_State*)context;
     global_State* g = L->global;
@@ -565,7 +565,7 @@ static void dumpobj(FILE* f, GCObject* o)
     }
 }
 
-static bool dumpgco(void* context, lua_Page* page, GCObject* gco)
+static bool dumpgco(void* context, lua_Page* /*page*/, GCObject* gco)
 {
     FILE* f = (FILE*)context;
 
@@ -883,7 +883,7 @@ static void enumobj(EnumContext* ctx, GCObject* o)
     }
 }
 
-static bool enumgco(void* context, lua_Page* page, GCObject* gco)
+static bool enumgco(void* context, lua_Page* /*page*/, GCObject* gco)
 {
     enumobj((EnumContext*)context, gco);
     return false;

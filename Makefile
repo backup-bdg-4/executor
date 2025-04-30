@@ -24,16 +24,16 @@ else
 	DEFS := -DPRODUCTION_BUILD=1
 endif
 
-CXXFLAGS := -std=c++17 -fPIC $(OPT_FLAGS) -Wall -Wextra -fvisibility=hidden -ferror-limit=0 -fno-limit-debug-info
-CFLAGS := -fPIC $(OPT_FLAGS) -Wall -Wextra -fvisibility=hidden -ferror-limit=0 -fno-limit-debug-info
-OBJCXXFLAGS := -std=c++17 -fPIC $(OPT_FLAGS) -Wall -Wextra -fvisibility=hidden -ferror-limit=0 -fno-limit-debug-info
-LDFLAGS := -shared -undefined dynamic_lookup -framework Foundation -framework UIKit -framework CoreGraphics -framework CoreFoundation -framework Security -framework CoreML -framework Vision -framework Metal -framework MetalKit
+CXXFLAGS := -std=c++17 -fPIC $(OPT_FLAGS) -Wall -Wextra -fvisibility=hidden
+CFLAGS := -fPIC $(OPT_FLAGS) -Wall -Wextra -fvisibility=hidden
+OBJCXXFLAGS := -std=c++17 -fPIC $(OPT_FLAGS) -Wall -Wextra -fvisibility=hidden
+LDFLAGS := -shared
 
 # Include paths - add VM includes for Lua headers and source directory
-INCLUDES := -I. -I/usr/local/include -I$(SDK)/usr/include -IVM/include -IVM/src -IVM/src/Luau -I$(SRC_DIR) -Iinclude
+INCLUDES := -I. -I/usr/local/include -IVM/include -IVM/src -IVM/src/Luau -I$(SRC_DIR) -Iinclude
 
-# iOS SDK flags for iOS 15+ compatibility
-PLATFORM_FLAGS := -isysroot $(SDK) -arch $(ARCHS) -mios-version-min=$(MIN_IOS_VERSION) -DIOS_VERSION=$(MIN_IOS_VERSION) -DLUAU_PLATFORM_IOS=1 -DLUAU_TARGET_IOS=1
+# Platform flags - simplified for non-iOS builds
+PLATFORM_FLAGS := -DLUAU_PLATFORM_GENERIC=1
 
 # Define output directories
 BUILD_DIR := build
@@ -42,9 +42,9 @@ LIB_NAME := libmylibrary.dylib
 INSTALL_DIR := /usr/local/lib
 
 # Compiler commands
-CXX := clang++
+CXX := g++
 CC := clang
-OBJCXX := clang++
+OBJCXX := g++
 LD := $(CXX) $(PLATFORM_FLAGS)
 
 # Add feature-specific flags
@@ -137,7 +137,7 @@ $(OUTPUT_DIR)/$(LIB_NAME): $(OBJECTS)
 	@mkdir -p $(BUILD_DIR)
 	@echo 'extern "C" int main(int argc, char** argv) { return 0; }' > $(BUILD_DIR)/main.cpp
 	$(CXX) $(CXXFLAGS) $(PLATFORM_FLAGS) $(DEFS) $(INCLUDES) -c -o $(BUILD_DIR)/main.o $(BUILD_DIR)/main.cpp
-	$(LD) $(LDFLAGS) -o $@ $(BUILD_DIR)/main.o $^ -install_name $(DYLIB_INSTALL_NAME)
+	$(LD) $(LDFLAGS) -o $@ $(BUILD_DIR)/main.o $^
 	@echo "✅ Built $@"
 
 %.o: %.cpp

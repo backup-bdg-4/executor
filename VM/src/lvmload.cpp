@@ -10,6 +10,7 @@
 #include "lmem.h"
 #include "lbytecode.h"
 #include "lapi.h"
+#include "Luau/BytecodeConstants.h" // Added include for bytecode constants
 
 #include <string.h>
 
@@ -50,7 +51,7 @@ struct ScopedSetGCThreshold
 {
 public:
     ScopedSetGCThreshold(global_State* global, size_t newThreshold) noexcept
-        : global{global}
+        : global(global)
     {
         originalThreshold = global->GCthreshold;
         global->GCthreshold = newThreshold;
@@ -108,7 +109,7 @@ void luaV_getimport(lua_State* L, LuaTable* env, TValue* k, StkId res, uint32_t 
 }
 
 template<typename T>
-static T read(const char* data, size_t size, size_t& offset)
+static T read(const char* data, size_t /*size*/, size_t& offset)
 {
     T result;
     memcpy(&result, data + offset, sizeof(T));
@@ -141,7 +142,7 @@ static TString* readString(TempBuffer<TString*>& strings, const char* data, size
     return id == 0 ? NULL : strings[id - 1];
 }
 
-static void resolveImportSafe(lua_State* L, LuaTable* env, TValue* k, uint32_t id)
+static void resolveImportSafe(lua_State* L, LuaTable* /*env*/, TValue* k, uint32_t id)
 {
     struct ResolveImport
     {
@@ -170,6 +171,7 @@ static void resolveImportSafe(lua_State* L, LuaTable* env, TValue* k, uint32_t i
         // luaD_pcall will make sure that if any C/Lua calls during import resolution fail, the thread state is restored back
         int oldTop = lua_gettop(L);
         int status = luaD_pcall(L, &ResolveImport::run, &ri, savestack(L, L->top), 0);
+        (void)oldTop; // Avoid unused variable warning
         LUAU_ASSERT(oldTop + 1 == lua_gettop(L)); // if an error occurred, luaD_pcall saves it on stack
 
         if (status != 0)

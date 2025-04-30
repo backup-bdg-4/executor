@@ -291,7 +291,7 @@ int lua_type(lua_State* L, int idx)
     return (o == luaO_nilobject) ? LUA_TNONE : ttype(o);
 }
 
-const char* lua_typename(lua_State* L, int t)
+const char* lua_typename(lua_State* /*L*/, int t)
 {
     return (t == LUA_TNONE) ? "no value" : luaT_typenames[t];
 }

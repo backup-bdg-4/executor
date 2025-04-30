@@ -1,0 +1,53 @@
+name: Save Build Errors
+
+on:
+  workflow_run:
+    workflows: ["Build"]
+    types:
+      - completed
+
+jobs:
+  save-errors:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    
+    steps:
+      - name: Download build logs
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const artifacts = await github.rest.actions.listWorkflowRunArtifacts({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: ${{ github.event.workflow_run.id }}
+            });
+            
+            const buildLogs = artifacts.data.artifacts.find(artifact => artifact.name === "build-logs");
+            
+            if (buildLogs) {
+              const download = await github.rest.actions.downloadArtifact({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                artifact_id: buildLogs.id,
+                archive_format: 'zip'
+              });
+              
+              require('fs').writeFileSync('build-logs.zip', Buffer.from(download.data));
+              require('child_process').execSync('unzip build-logs.zip');
+            }
+      
+      - name: Extract errors from logs
+        run: |
+          mkdir -p error-logs
+          if [ -f "build.log" ]; then
+            grep -n "error:" build.log > error-logs/compilation-errors.txt || true
+            grep -n "warning:" build.log > error-logs/compilation-warnings.txt || true
+          fi
+      
+      - name: Upload error logs
+        uses: actions/upload-artifact@v3
+        with:
+          name: error-logs
+          path: error-logs/
+          retention-days: 7
+
