@@ -45,9 +45,8 @@ jobs:
           fi
       
       - name: Upload error logs
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: error-logs
           path: error-logs/
           retention-days: 7
-
