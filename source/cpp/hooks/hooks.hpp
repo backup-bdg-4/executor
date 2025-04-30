@@ -8,14 +8,18 @@
 #include <iostream>
 #include <mutex>
 
+// Include our platform-independent macros
+#include "../../include/Macros.h"
+
+// Include the dobby wrapper header
+#include "../dobby_wrapper.h"
+
 // Forward declarations for Objective-C runtime types
 #ifdef __APPLE__
 #include "../objc_isolation.h"
-#include "../../include/objc/runtime.h"
 typedef void* HookIMP; // Use custom name to avoid conflict with system IMP
 #else
 #include "../objc_isolation.h"
-#include "../../include/objc/runtime.h"
 typedef void* HookIMP;
 #endif
 
@@ -64,7 +68,7 @@ namespace Hooks {
         
     private:
         // Keep track of hooked methods
-        static std::map<std::string, std::pair<Class, SEL>> s_hookedMethods;
+        static std::map<std::string, std::pair<void*, void*>> s_hookedMethods; // Using void* instead of Class, SEL
         static std::mutex s_methodMutex;
     };
 }

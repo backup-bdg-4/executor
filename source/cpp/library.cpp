@@ -1,5 +1,5 @@
 // library.cpp - Implementation of public library interface
-#include "library.hpp"
+#include "../library.hpp"
 #include "init.hpp"
 #include <cstring>
 #include <iostream>
