@@ -24,6 +24,9 @@
 #define LUAU_INSN_A(insn) (((insn) >> 8) & 0xFF)
 #define LUAU_INSN_A5(insn) (((insn) >> 8) & 0x1F)
 
+// Define LBC_TYPE_FUNCTION constant
+#define LBC_TYPE_FUNCTION 0
+
 // Define bytecode opcodes - we need these for the VM code
 enum LuauOpcode
 {
